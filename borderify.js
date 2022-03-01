@@ -11,9 +11,8 @@ function setUpInput() {
     input.style.padding = "5px";
     input.style.margin = "0 20px 1em";
     input.style.width = "100%";
-    input.onkeydown = detectChanges; //.bind(ENUM_CHANGETYPE.KEYDOWN);
-    input.onkeyup = detectChanges; //.bind(ENUM_CHANGETYPE.KEYUP);
-    // input.onchange = detectChanges.bind(ENUM_CHANGETYPE.CHANGE);
+    input.onkeydown = detectChanges;
+    input.onkeyup = detectChanges;
     
     // Append to form
     document.getElementById("saml_form").getElementsByTagName("p")[0].after(input);
@@ -23,29 +22,36 @@ function setUpInput() {
     return input;
 }
 
-function getAccounts() {
-    return [...document.getElementsByClassName("saml-account-name")].forEach(o => console.log(o.innerText.replace("Account: ", "")));
-}
-
 const finalInput = setUpInput();
 const accts = getAccounts();
 
-function detectChanges(event) {
+function getAccounts() {
+    return [...document.getElementsByClassName("saml-account-name")].forEach(o => o.innerText.replace("Account: ", ""));
+}
+
+function detectChanges() {
     const filterValue = this.value;
     if (filterValue.length == 0) { getAllOptions().forEach(show); return; }
-    
+
     filterOptionsByValue(filterValue);
 }
+
+function hide(o) { o.parentNode.parentNode.style.display = 'none'; }
+function show(o) { o.parentNode.parentNode.style.display = 'block'; }
 
 function getAllOptions() {
     return [...document.getElementsByClassName("saml-account-name")];
 }
 
 function filterOptionsByValue(value) {
-    // showAllOptions();
-    getAllOptions().filter(label => label.innerText.indexOf(value) != -1).forEach(show);
-    getAllOptions().filter(label => label.innerText.indexOf(value) == -1).forEach(hide);
+    getAllOptions().filter(o => matchesAll(o, value)).forEach(show);
+    getAllOptions().filter(o => !matchesAll(o, value)).forEach(hide);
 }
 
-function hide(o) { o.parentNode.parentNode.style.display = 'none'; }
-function show(o) { o.parentNode.parentNode.style.display = 'block'; }
+function matchesAll(accountName, filterValuesSeparatedBySpaces) {
+    const vals = filterValuesSeparatedBySpaces.split(' ');
+    const accountText = accountName.innerText;
+    const allValuesFoundInAccountText = vals.every(o => accountText.indexOf(o) != -1);
+    console.log(allValuesFoundInAccountText);
+    return allValuesFoundInAccountText;
+}
