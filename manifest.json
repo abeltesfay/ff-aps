@@ -1,14 +1,14 @@
 {
     "manifest_version": 2,
-    "name": "Borderify",
-    "version": "1.0",
-    "description": "Adds a red border to all webpages matching mozilla.org",
+    "name": "Firefox AWS Plugin Simplifier",
+    "version": "1.0.0",
+    "description": "Adds a neat filtering ability to the AWS login page. Well, I think it's neat anyway.",
     "icons": {
         "48": "icons/border-48.png"
     },
     "content_scripts": [
         {
-            "matches": ["*://*.mozilla.org/*"],
+            "matches": ["*://signin.aws.amazon.com/saml"],
             "js": ["borderify.js"]
         }
     ]
