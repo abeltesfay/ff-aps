@@ -138,7 +138,7 @@ function handleArrow(arrkey) {
     selectNextVisibleOne(direction);
 }
 
-const HIGHLIGHT_COLOR = "2px dashed black";
+const HIGHLIGHT_COLOR = "3px solid rgb(255, 153, 0)";
 
 function selectNextVisibleOne(direction) {
     let options = getAllVisibleOptionsParents();
@@ -182,3 +182,7 @@ function isScrolledIntoView(el) {
     // isVisible = elemTop < window.innerHeight && elemBottom >= 0;
     return isVisible;
 }
+
+//
+// TODO Tag storage per account for easier search
+//
