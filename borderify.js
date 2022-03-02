@@ -1,7 +1,6 @@
 removeCustomFilterInputIfExists();
-
 setUpCustomFilterInput();
-
+// loadLastValueFromLocalStorage();
 document.body.onkeydown = refocusInputOnEscapeKey;
 
 // Allow user to hit escape key if focus is lost from input filter
@@ -27,6 +26,7 @@ function setUpCustomFilterInput() {
     // Create custom filter
     const input = document.createElement("input");
     input.setAttribute("class", "custom-filter");
+    input.setAttribute("autocomplete", "off");
     input.style.padding = "5px";
     input.style.margin = "0 20px 1em";
     input.style.width = "100%";
