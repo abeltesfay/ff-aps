@@ -11,5 +11,13 @@
             "matches": ["*://signin.aws.amazon.com/saml"],
             "js": ["fancy_searchbox.js"]
         }
-    ]
+    ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "your-add-on-name@your-domain.com"
+        }
+    },
+    "browser_action": {
+        "default_icon": "icons/border-48.png"
+    }
 }

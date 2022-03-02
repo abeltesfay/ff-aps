@@ -7,7 +7,7 @@ This plugin creates a searchbox and keyboard functionality to easily log into AW
 
   1. (Optional) Rename zip to to have an .xpi extension -- zip is fine though.
 
-  1. (Note) File will show up under the output directory
+  1. (Note) File will show up under the output directory called **ff-apps.zip**
 
 ## To temporarily load this extension:
   
@@ -35,3 +35,14 @@ This plugin creates a searchbox and keyboard functionality to easily log into AW
 
   1. Enjoy your fancy new life
   
+## Chrome Support
+
+  1. Go to hamburger (3 lines) button at the top right
+
+  1. Drill down into "More Tools" -> "Extensions"
+
+  1. Click "Developer Mode" at the top right to turn it on
+
+  1. Click "Load unpacked" and add this entire folder
+
+  1. Enjoy your Chrome version of ff-apps, aka chr-apps! :)
