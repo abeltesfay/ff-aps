@@ -43,7 +43,7 @@ function setUpCustomFilterInput() {
 
 function detectChanges(event) {
     if (event.which == 13) { // Handle enter key
-        attemptLogin();
+        try { attemptLogin(); } catch(err) { console.error(err); };
         return false;
     }
 
@@ -93,13 +93,14 @@ function attemptLogin() {
     let selected = getHighlightedIndex(options);
 
     if (selected !== -1) {
+        if (!doubleConfirmationIfProd(options[selected].innerText)) { return; }
         options[selected].getElementsByClassName('saml-role-description')[0].click();
         clickLoginButton();
     } else
-
+    
     // None highlighted? If there is only 1, select that one
     if (visibleOptions.length == 1) {
-        // Select the first radio button
+        if (!doubleConfirmationIfProd(visibleOptions[0].innerText)) { return; }
         visibleOptions[0].getElementsByClassName('saml-role-description')[0].click();
         clickLoginButton();
     }
@@ -109,6 +110,17 @@ function attemptLogin() {
 
 function getAllVisibleOptionsParents() {
     return getAllOptions().map(parent).filter(o => o.style.display != 'none');
+}
+
+function doubleConfirmationIfProd(ele) {
+    const prodValues = ["prd", "prod", "pool"];
+    const text = ele;
+    console.log(ele.toLowerCase());
+    if (!prodValues.some(prodVal => text.toLowerCase().indexOf(prodVal) != -1)) { return true; }
+
+    let confirmation = confirm("WARNING: THIS MAY BE A PRODUCTION ENVIRONMENT!\n\nAre you sure you want to continue?");
+    // confirmation = confirmation ? confirm("Are you really, REALLY sure though?") : confirmation;
+    return confirmation;
 }
 
 function clickLoginButton() { document.getElementById("signin_button").click(); }
