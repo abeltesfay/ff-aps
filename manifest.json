@@ -1,6 +1,6 @@
 {
     "manifest_version": 2,
-    "name": "Firefox AWS Plugin Simplifier",
+    "name": "Firefox AWS Plugin Searchbox",
     "version": "1.0.0",
     "description": "Adds a neat filtering ability to the AWS login page. Well, I think it's neat anyway.",
     "icons": {
