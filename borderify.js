@@ -1,10 +1,26 @@
-// Clean up old custom filter inputs that may exist
-// https://stackoverflow.com/questions/3871547/js-iterating-over-result-of-getelementsbyclassname-using-array-foreach
-[...document.getElementsByClassName("custom-filter")].forEach(o => o.remove());
+removeCustomFilterInputIfExists();
 
-const ENUM_CHANGETYPE = { KEYDOWN: 0, KEYUP: 1 };
+setUpCustomFilterInput();
 
-function setUpInput() {
+document.body.onkeydown = refocusInputOnEscapeKey;
+
+// Allow user to hit escape key if focus is lost from input filter
+function refocusInputOnEscapeKey(event) {
+    if (event.which != 27) { return; }
+    document.getElementsByClassName("custom-filter")[0].focus();
+    resetHighlighted();
+    return false;
+};
+
+//
+// Creating a new input to filter when typing
+//
+function removeCustomFilterInputIfExists() {
+    // https://stackoverflow.com/questions/3871547/js-iterating-over-result-of-getelementsbyclassname-using-array-foreach
+    [...document.getElementsByClassName("custom-filter")].forEach(o => o.remove());
+}
+
+function setUpCustomFilterInput() {
     getAllOptions().forEach(show); // Reset
     resetHighlighted();
 
@@ -14,8 +30,9 @@ function setUpInput() {
     input.style.padding = "5px";
     input.style.margin = "0 20px 1em";
     input.style.width = "100%";
-    input.onkeydown = detectChanges.bind('down');
+    input.onkeydown = detectChanges.bind('down'); // bind 'this' keyword = 'down' when inside the function 
     input.onkeyup = detectChanges.bind('up');
+    input.placeholder = "Space-delimited filter, arrow keys to select, hit enter to log in, escape to re-focus here";
     
     // Append search box to form
     document.getElementById("saml_form").getElementsByTagName("p")[0].after(input);
@@ -24,20 +41,19 @@ function setUpInput() {
     return input;
 }
 
-const finalInput = setUpInput();
-
 function detectChanges(event) {
-    // if (this !== 'down') { ; }
     if (event.which == 13) { // Handle enter key
         attemptLogin();
         return false;
     }
 
-    if (this == 'down' && detectArrows(event)) { return; } // Exit on arrows
+    // Only register arrow keys on keydown for repeats; this handles highlighting
+    if (this == 'down' && detectArrows(event)) { return; }
+    if (this == 'up' && (event.which == 38 || event.which == 40)) { return; } // Ignore key up arrows
 
-
+    // Handle filtering on every other key press
     const filterValue = event.target.value;
-    if (filterValue.length == 0) { getAllOptions().forEach(show); return; }
+    if (filterValue.length == 0) { getAllOptions().forEach(show); resetHighlighted(); return; }
 
     filterOptionsByValue(filterValue);
 }
@@ -51,11 +67,18 @@ function getAllOptions() {
 }
 
 function filterOptionsByValue(value) {
-    getAllOptions().filter(o => matchesAll(o, value)).forEach(show);
-    getAllOptions().filter(o => !matchesAll(o, value)).forEach(hide);
+    getAllOptions().filter(o => !matchesAllWords(o, value)).forEach(hide);
+    getAllOptions().filter(o => matchesAllWords(o, value)).forEach(show);
+
+    resetHighlighted();
+
+    if (getAllOptions().filter(o => matchesAllWords(o, value)).length == 1) {
+        // Auto-select
+        selectNextVisibleOne(-1);
+    }
 }
 
-function matchesAll(accountName, filterValuesSeparatedBySpaces) {
+function matchesAllWords(accountName, filterValuesSeparatedBySpaces) {
     const vals = filterValuesSeparatedBySpaces.split(' ');
     const accountText = accountName.innerText;
     const allValuesFoundInAccountText = vals.every(o => accountText.indexOf(o) != -1);
@@ -76,7 +99,7 @@ function attemptLogin() {
 
     // None highlighted? If there is only 1, select that one
     if (visibleOptions.length == 1) {
-        // Select the radio button
+        // Select the first radio button
         visibleOptions[0].getElementsByClassName('saml-role-description')[0].click();
         clickLoginButton();
     }
@@ -85,7 +108,7 @@ function attemptLogin() {
 }
 
 function getAllVisibleOptionsParents() {
-    return getAllOptions().map(parent).filter(o => o.style.display !== 'none');
+    return getAllOptions().map(parent).filter(o => o.style.display != 'none');
 }
 
 function clickLoginButton() { document.getElementById("signin_button").click(); }
@@ -95,17 +118,18 @@ function clickLoginButton() { document.getElementById("signin_button").click(); 
 // Highlighting functionality
 //
 function resetHighlighted() {
-    getAllVisibleOptionsParents().filter(o => o.style.borderLeft = "none");
+    window.scrollTo(0, 0);
+    getAllVisibleOptionsParents().forEach(o => o.style.borderLeft = "none");
 }
 
 function detectArrows(event) {
-    if (event.which == 27) { resetHighlighted(); return true; }
+    if (event.which == 27) { resetHighlighted(); return true; } // Escape key
 
     if (event.which == 38 || event.which == 40) { // Handle up (38) or down (40) keys for easy selection
         handleArrow(event.which);
         return true;
     }
-    
+
     resetHighlighted();
 }
 
@@ -114,7 +138,7 @@ function handleArrow(arrkey) {
     selectNextVisibleOne(direction);
 }
 
-const HIGHLIGHT_COLOR = "2px dashed red";
+const HIGHLIGHT_COLOR = "2px dashed black";
 
 function selectNextVisibleOne(direction) {
     let options = getAllVisibleOptionsParents();
@@ -126,6 +150,7 @@ function selectNextVisibleOne(direction) {
     resetHighlighted();
 
     options[selected].style.borderLeft = HIGHLIGHT_COLOR;
+    scrollToMakeItVisible(options[selected]);
 }
 
 function getHighlightedIndex(options) {   
@@ -134,4 +159,26 @@ function getHighlightedIndex(options) {
     }
 
     return -1;
+}
+
+function scrollToMakeItVisible(ele) {
+    for(let i = 0; i < window.scrollMaxY; i++) {
+        window.scrollTo(0, i);
+        if (isScrolledIntoView(ele)) { return; }
+    }
+}
+
+// https://stackoverflow.com/questions/487073/how-to-check-if-element-is-visible-after-scrolling
+function isScrolledIntoView(el) {
+    const buffer = 60; // add 60 pixels of buffer for scrollbar
+    var rect = el.getBoundingClientRect();
+    var elemTop = rect.top;
+    var elemBottom = rect.bottom + buffer;
+    // console.log(elemTop + " - " + elemBottom);
+
+    // Only completely visible elements return true:
+    var isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
+    // Partially visible elements return true:
+    // isVisible = elemTop < window.innerHeight && elemBottom >= 0;
+    return isVisible;
 }
