@@ -5,7 +5,9 @@ This plugin creates a searchbox and keyboard functionality to easily log into AW
 
   1. Zip folder (sans .git folder) using either pkg.cmd or pkg.sh
 
-  1. (Optional) Rename zip to to have be .xpi
+  1. (Optional) Rename zip to to have an .xpi extension -- zip is fine though.
+
+  1. (Note) File will show up under the output directory
 
 ## To temporarily load this extension:
   
