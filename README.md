@@ -1,12 +1,13 @@
 # Firefox AWS Plugin Searchbox
-This plugin creates a searchbox and keyboard functionality to easily log into AWS from their account selection screen. Live your fanciest life with this plugin.
+This extension creates a searchbox on the AWS SAML login page (signin.aws.amazon.com/saml) if your organization uses it, and also provides keyboard functionality to easily log in to AWS from their account selection screen. Live your fanciest life with this extension.
 
-*Installing this unsigned extension requires you to be running Firefox Extended Support Release, Developer Edition, or Nightly version! Chrome may work as well.*
+*Installing this unsigned extension requires you to be running Firefox Extended Support Release, Developer Edition, or Nightly version! Firefox Browser alone will NOT allow unsigned extensions. Chrome may work out of the box too.*
 
 ## Project Anatomy
 ```
 icons/                  Delicious icon
 output/                 Where pkg.cmd/pkg.sh drops installable extension
+screenshots/            Screenshots of extension in action
 fancy_searchbox.js      The goods (self-contained javascript of all logic/styling)
 license-gnugplv3.txt    Applies to everything here, except icons (I do not own it)
 manifest.json           Meta file for Firefox/Chrome to understand extension
@@ -20,8 +21,17 @@ README.md               You are here
     Arrow keys to select a high-level account
     Enter to log in once selected
     Escape key to re-focus on and clear out input box
+    Confirmation if logging into prod/prd accounts
     Delicious drumstick logo
 ```
+
+## Screenshots
+
+AWS SAML Login Page with searchbox extension
+![AWS Login Page](screenshots\example-01-sso-listing.png)
+
+Filtered accounts, selected using arrow keys. You can hit enter to log in
+![Filtered and Selected Using Arrow Keys](screenshots\example-02-filtered-selected-with-arrow-keys.png)
 
 ## Create the unsigned, loadable Firefox extension .zip from this folder
 
