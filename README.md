@@ -3,6 +3,8 @@ This extension creates a searchbox on the AWS SAML login page (signin.aws.amazon
 
 *Installing this unsigned extension requires you to be running Firefox Extended Support Release, Developer Edition, or Nightly version! Firefox Browser alone will NOT allow unsigned extensions. Chrome may work out of the box too.*
 
+**Some assembly may be required**
+
 ## Project Anatomy
 ```
 icons/                  Delicious icon
