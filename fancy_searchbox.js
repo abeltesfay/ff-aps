@@ -1,7 +1,26 @@
 removeCustomFilterInputIfExists();
 setUpCustomFilterInput();
+clearTagsLabels();
+// addTagsLabels();
 // loadLastValueFromLocalStorage();
 document.body.onkeydown = refocusInputOnEscapeKey;
+
+function clearTagsLabels() {
+    [...document.getElementsByClassName("custom-tags")].forEach(ele => ele.remove());
+}
+
+function addTagsLabels() {
+    const lastElementsInEachAccount = [...document.getElementsByClassName("saml-account")].filter(ele => ele.parentNode.tagName == 'DIV');
+    lastElementsInEachAccount.forEach(addTagsLabel);
+}
+
+function addTagsLabel(ele) {
+    const tagsLabel = document.createElement("div");
+    tagsLabel.style.margin = "0 20px";
+    tagsLabel.attributes("class", "custom-tags");
+    // tagsLabel.innerText = "Tags: ";
+    ele.append(tagsLabel);
+}
 
 // Allow user to hit escape key if focus is lost from input filter
 function refocusInputOnEscapeKey(event) {
