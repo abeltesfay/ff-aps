@@ -28,10 +28,10 @@ README.md               You are here
 ## Screenshots
 
 AWS SAML Login Page with searchbox extension
-![AWS Login Page](screenshots\example-01-sso-listing.png)
+![AWS Login Page](/screenshots/example-01-sso-listing.png)
 
 Filtered accounts, selected using arrow keys. You can hit enter to log in
-![Filtered and Selected Using Arrow Keys](screenshots\example-02-filtered-selected-with-arrow-keys.png)
+![Filtered and Selected Using Arrow Keys](/screenshots/example-02-filtered-selected-with-arrow-keys.png)
 
 ## Create the unsigned, loadable Firefox extension .zip from this folder
 
