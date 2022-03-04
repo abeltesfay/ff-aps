@@ -1,4 +1,4 @@
-@REM TODO -- Need to zip as deflated mode this.. tar likely doesn't support it
+@REM Need to zip using DEFLATE
 
 @echo[
 @echo STARTING: Creating new compressed file ff-aps.zip....
