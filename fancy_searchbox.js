@@ -1,28 +1,18 @@
 removeCustomFilterInputIfExists();
 setUpCustomFilterInput();
-clearTagsLabels();
-// addTagsLabels();
-// loadLastValueFromLocalStorage();
+let GLOBALS = { nextEnterKeyUpDisabled: false }; // Prevent accidental log ins, see addTagToVisibleAccounts()
+
+const LOCAL_STORAGE_KEY = "ff-aps-tags";
+createTagsContainers();
+createTagButtons();
+resetTagsFromMemory();
+
+
 document.body.onkeydown = refocusInputOnEscapeKey;
 
-function clearTagsLabels() {
-    [...document.getElementsByClassName("custom-tags")].forEach(ele => ele.remove());
-}
-
-function addTagsLabels() {
-    const lastElementsInEachAccount = [...document.getElementsByClassName("saml-account")].filter(ele => ele.parentNode.tagName == 'DIV');
-    lastElementsInEachAccount.forEach(addTagsLabel);
-}
-
-function addTagsLabel(ele) {
-    const tagsLabel = document.createElement("div");
-    tagsLabel.style.margin = "0 20px";
-    tagsLabel.attributes("class", "custom-tags");
-    // tagsLabel.innerText = "Tags: ";
-    ele.append(tagsLabel);
-}
-
+//
 // Allow user to hit escape key if focus is lost from input filter
+//
 function refocusInputOnEscapeKey(event) {
     if (event.which != 27) { return; }
     document.getElementsByClassName("custom-filter")[0].focus();
@@ -35,7 +25,7 @@ function refocusInputOnEscapeKey(event) {
 //
 function removeCustomFilterInputIfExists() {
     // https://stackoverflow.com/questions/3871547/js-iterating-over-result-of-getelementsbyclassname-using-array-foreach
-    [...document.getElementsByClassName("custom-filter")].forEach(o => o.remove());
+    [...document.getElementsByClassName("custom-filter-container")].forEach(o => o.remove());
 }
 
 function setUpCustomFilterInput() {
@@ -43,18 +33,26 @@ function setUpCustomFilterInput() {
     resetHighlighted();
 
     // Create custom filter
+    const inputContainer = document.createElement("div");
+    inputContainer.setAttribute("class", "custom-filter-container");
+    inputContainer.style.padding = "0 0 1em 20px";
+    inputContainer.style.display = "flex";
+
     const input = document.createElement("input");
     input.setAttribute("class", "custom-filter");
     input.setAttribute("autocomplete", "off");
+    input.style.boxSizing = "border-box";
+    input.style.flexGrow = "1";
     input.style.padding = "5px";
-    input.style.margin = "0 20px 1em";
-    input.style.width = "100%";
+    // input.style.width = "100%";
     input.onkeydown = detectChanges.bind('down'); // bind 'this' keyword = 'down' when inside the function 
     input.onkeyup = detectChanges.bind('up');
-    input.placeholder = "Space-delimited filter, arrow keys to select, hit enter to log in, escape to re-focus here";
+    input.placeholder = "Space-delimited filter, .tag, arrow keys select, enter logs in, escape to re-focus here";
+
+    inputContainer.appendChild(input);
     
     // Append search box to form
-    document.getElementById("saml_form").getElementsByTagName("p")[0].after(input);
+    document.getElementById("saml_form").getElementsByTagName("p")[0].after(inputContainer);
     
     input.focus();
     return input;
@@ -62,6 +60,8 @@ function setUpCustomFilterInput() {
 
 function detectChanges(event) {
     if (event.which == 13) { // Handle enter key
+        if (GLOBALS.nextEnterKeyUpDisabled) { GLOBALS.nextEnterKeyUpDisabled = false; return false; }
+        if (this == 'down') { GLOBALS.nextEnterKeyUpDisabled = false; } // Reset on key down
         try { attemptLogin(); } catch(err) { console.error(err); };
         return false;
     }
@@ -98,10 +98,10 @@ function filterOptionsByValue(value) {
 }
 
 function matchesAllWords(accountName, filterValuesSeparatedBySpaces) {
-    const vals = filterValuesSeparatedBySpaces.split(' ');
-    const accountText = accountName.innerText;
-    const allValuesFoundInAccountText = vals.every(o => accountText.indexOf(o) != -1);
-    return allValuesFoundInAccountText;
+    const vals = filterValuesSeparatedBySpaces.split(' ').filter(val => val.slice(0, 1) != "."); // Ignore any tag-specific filters
+    const accountTextAndTags = accountName.innerText + " " + accountName.dataset.tags;
+    const allValuesFoundInAccountTextOrTags = vals.every(o => accountTextAndTags.indexOf(o) != -1);
+    return allValuesFoundInAccountTextOrTags;
 }
 
 function attemptLogin() {
@@ -215,5 +215,238 @@ function isScrolledIntoView(el) {
 }
 
 //
-// TODO Tag storage per account for easier search
+// Tag functionality
 //
+//
+// Tagging functionality to allow for related project/functionality grouping and easier filtering
+//
+function createTagsContainers() {
+    [...document.getElementsByClassName("custom-tags")].forEach(ele => ele.remove()); // Remove any old tags div containers
+    
+    [...document.getElementsByClassName("saml-role")].forEach(ele => ele.style.marginBottom = "10px"); // Styling tweak to fit tags closer to roles
+
+    const lastElementsInEachAccount = [...document.getElementsByClassName("saml-account")].filter(ele => ele.parentNode.tagName == 'DIV');
+    lastElementsInEachAccount.forEach(ele => createTagsContainer(ele));
+}
+
+function createTagsContainer(ele) {
+    const tagsLabel = document.createElement("div");
+    tagsLabel.style.margin = "0 20px";
+    tagsLabel.setAttribute("class", "custom-tags");
+    ele.append(tagsLabel);
+}
+
+function createTagButtons() {
+    createTagButtonElement("Tag", addTagToVisibleAccounts, "Add tag to currently visible accounts");
+    let buttonE = createTagButtonElement("E", exportTags, "Export tags; display importable string that you can share");
+    let buttonI = createTagButtonElement("I", importTags, "Import tags; replace your current tags with values from json string");
+
+    buttonE.style.padding = ".5em .5em";
+    buttonI.style.padding = ".5em .5em";
+}
+
+function createTagButtonElement(text, func, title) {
+    const button = document.createElement("button");
+    button.innerText = text;
+    button.style.margin = "0 0 0 .5em";
+    button.style.padding = ".5em 1em";
+    button.setAttribute("title", title);
+    button.setAttribute("class", "add-tag-button");
+    button.onclick = func;
+
+    const filterContainer = document.getElementsByClassName("custom-filter-container")[0];
+    filterContainer.appendChild(button);
+
+    return button;
+}
+
+function addTagToVisibleAccounts() {
+    document.getElementsByClassName("custom-filter")[0].focus();
+    GLOBALS.nextEnterKeyUpDisabled = true; // Prevent issue where hitting enter key may register as a keyup in filter causing an accidental log in; won't prevent key repeats though
+
+    let tag = prompt("Please provide a tag name (a-z 0-9 - . ! no spaces, >=2) to add:");
+    tag = tag == null ? null : tag.toLowerCase();
+    if (tag == null) { return false; }
+    if (!isValidTagName(tag)) { alert("Invalid tag name, must adhere to (a-z 0-9 - . ! no spaces, >=2)"); return false; }
+    
+    let visibleAccounts = getAllVisibleOptionsParents();
+    if (visibleAccounts.length > 4
+        && !confirm(`Are you sure you want to tag all ${visibleAccounts.length} accounts with '${tag}'?`)) { return false; }
+    visibleAccounts.forEach(account => addTagToAccount(account, tag));
+
+    resetTagsFromMemory();
+    return false; // Prevent form submission
+}
+
+function isValidTagName(str) {
+    return typeof str === "string" && /^([a-z0-9\-\.\!]{2,})$/.test(str);
+}
+
+function addTagToAccount(accountElement, tag) {
+    const accountNameText = accountElement.getElementsByClassName("saml-account-name")[0].innerText;
+    const accountNumber = accountNameText.slice(accountNameText.indexOf("(") + 1, -1);
+
+    let updatedAccountTags = JSON.parse(JSON.stringify(loadAccountTags(accountNumber)));
+    updatedAccountTags.push(tag);
+
+    saveAccountTags(accountNumber, updatedAccountTags);
+}
+
+function resetTagsFromMemory() {
+    const customTags = [...document.getElementsByClassName("custom-tags")];
+    customTags.forEach(ele => fillCustomTag(ele));
+}
+
+function fillCustomTag(customTagsContainer) {
+    customTagsContainer.innerHTML = ""; // Clear current tag labels
+    const accountNameText = customTagsContainer.parentNode.parentNode.getElementsByClassName("saml-account-name")[0].innerText;
+    const accountNumber = accountNameText.slice(accountNameText.indexOf("(") + 1, -1);
+    const tagLabelsToCreate = loadAccountTags(accountNumber);
+    addTagsToSamlAccountNameDataSet(customTagsContainer, tagLabelsToCreate.join(" "));
+    tagLabelsToCreate.forEach(tag => addTagElement(customTagsContainer, accountNumber, tag));
+}
+
+function addTagsToSamlAccountNameDataSet(customTagsContainer, tags) {
+    customTagsContainer.parentNode.parentNode.getElementsByClassName("saml-account-name")[0].dataset.tags = tags;
+}
+
+// Returns an array of string tags for the specified account number
+function loadAccountTags(accountNumber) {
+    let tags = loadAllTags()?.[accountNumber];
+    return !Array.isArray(tags) ? [] : tags;
+}
+
+// Returns a map of "accountNumber" -> ["tag1","tag2",...,"tagX"]
+function loadAllTags() {
+    try {
+        let tags = window.localStorage.getItem(LOCAL_STORAGE_KEY); // https://www.lastweekinaws.com/blog/are-aws-account-ids-sensitive-information/
+        return tags == null ? {} : JSON.parse(tags);
+    } catch (err) {
+        console.error(`Error while attempting to load tags: ${err}`);
+    }
+
+    return {};
+}
+
+function addTagElement(customTag, accountNumber, tag) {
+    let tagSpan = document.createElement("span"); // wrapper for below label+delete button
+    tagSpan.style.backgroundColor = "#ddd";
+    tagSpan.style.borderRadius = "3px";
+    tagSpan.style.display = "inline-block";
+    tagSpan.style.lineHeight = "1em";
+    tagSpan.style.marginRight = ".5em";
+    tagSpan.style.userSelect = "none";
+    
+    let label = document.createElement("label");
+    label.setAttribute("class", "custom-tag-label");
+    label.innerText = tag;
+    label.style.borderRadius = "3px";
+    label.style.display = "inline-block";
+    label.style.padding = ".25em .5em";
+    label.onclick = appendTagToFilter.bind(label.innerText);
+    
+    let delbutton = document.createElement("label");
+    delbutton.innerText = "×";
+    delbutton.style.backgroundColor = "#eee";
+    delbutton.style.borderRadius = "3px";
+    delbutton.style.display = "inline-block";
+    delbutton.style.borderRadius = "0 3px 3px 0";
+    delbutton.style.padding = ".25em .5em";
+    delbutton.style.cursor = "pointer";
+    delbutton.onclick = deleteTag.bind({accountNumber, tag});
+    
+    tagSpan.appendChild(label);
+    tagSpan.appendChild(delbutton);
+    customTag.appendChild(tagSpan);
+}
+
+function deleteTag() {
+    const { accountNumber, tag: tagToRemove } = this;
+    if (!confirm(`Are you sure you want to remove tag '${tagToRemove}' from account ${accountNumber}?`)) { return; }
+    
+    let updatedAccountTags = JSON.parse(JSON.stringify(loadAccountTags(accountNumber)));
+    updatedAccountTags = updatedAccountTags.filter(tagInList => tagInList !== tagToRemove);
+
+    saveAccountTags(accountNumber, updatedAccountTags);
+    resetTagsFromMemory();
+    refreshFilterView();
+}
+
+function saveAccountTags(accountNumber, updatedAccountTags) {
+    let allTags = loadAllTags();
+    if (typeof allTags != 'object') { allTags = {} };
+
+    allTags[accountNumber] = updatedAccountTags;
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allTags));
+}
+
+function appendTagToFilter() {
+    const filter = document.getElementsByClassName("custom-filter")[0];
+    if (filter.value.indexOf(this) != -1) { return; }
+    filter.value = `${filter.value} ${this}`.trim();
+    refreshFilterView();
+}
+
+function refreshFilterView() {
+    const filter = document.getElementsByClassName("custom-filter")[0];
+    filterOptionsByValue(filter.value);
+    filter.focus();
+}
+
+function exportTags() {
+    document.getElementsByClassName("custom-filter")[0].focus();
+    const tags = loadAllTags();
+
+    const noEmptyTags = Object.getOwnPropertyNames(tags).reduce((prev, curr) => {
+                if (tags[curr].length > 0) { prev[curr] = tags[curr]; }
+                return prev;
+            }
+            , {}
+        );
+
+    document.getElementsByClassName("custom-filter")[0].value = JSON.stringify(noEmptyTags);
+    return false;
+}
+
+function importTags() {
+    document.getElementsByClassName("custom-filter")[0].focus();
+    
+    const importableJson = prompt("WARNING: This replaces ALL tags on specified accounts, and leaves tags on unspecified ones! We recommend exporting a backup.\n\nPlease paste the importable json string here:");
+    if (importableJson == null) { return false; }
+
+    try {
+        const obj = JSON.parse(importableJson);
+        const accounts = Object.getOwnPropertyNames(obj);
+        const accountsOnPage = getAllOptions().map(ele => ele.innerText).map(accountNameText => accountNameText.slice(accountNameText.indexOf("(") + 1, -1).trim());
+        
+        const validAccounts = accounts.filter(account => accountsOnPage.indexOf(account) >= 0);
+        const invalidAccounts = accounts.filter(account => accountsOnPage.indexOf(account) == -1);
+        const totalTagsFound = accounts.reduce((prev, curr) => prev + obj[curr].length, 0);
+
+        const validAccountsAndTags = validAccounts.reduce((prev, curr) => { prev[curr] = obj[curr].filter(isValidTagName); return prev; }, {}); // Filter invalid tags
+
+         // Merge-replace accounts+tags map into current accounts+tags map
+        let currentTags = loadAllTags();
+        const tagsToSave = validAccounts.reduce((prev, curr) => { prev[curr] = validAccountsAndTags[curr]; return prev; }, currentTags);
+        saveAndReplaceAllTags(tagsToSave);
+
+        const totalTagsImported = validAccounts.reduce((prev, curr) => prev + validAccountsAndTags[curr].length, 0);
+        const totalTagsSaved = Object.getOwnPropertyNames(tagsToSave).reduce((prev, curr) => prev + tagsToSave[curr].length, 0);
+
+        alert(`${validAccounts.length} valid accounts found:\n`
+            + `${validAccounts}\n\n`
+            + `${invalidAccounts.length} invalid accounts found:\n`
+            + `${invalidAccounts}\n\n`
+            + `${totalTagsImported} / ${totalTagsFound} total tags imported, total tags saved ${totalTagsSaved}`);
+    } catch(err) {
+        alert(err);
+    }
+
+    resetTagsFromMemory();
+    
+    return false;
+}
+
+function saveAndReplaceAllTags(tags) {
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tags));
+}
