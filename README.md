@@ -17,6 +17,7 @@ README.md               You are here
 ```
 2022-03-07 Version 1.1
     Add tags to accounts for filtering and grouping
+    Add export and import functionality
 
 2022-03-04 Version 1.0
     Space-delimited, word-based, 'AND' filtering through an input box
