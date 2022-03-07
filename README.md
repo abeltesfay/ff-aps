@@ -15,6 +15,9 @@ README.md               You are here
 
 ## Latest changes
 ```
+2022-03-07 Version 1.1
+    Add tags to accounts for filtering and grouping
+
 2022-03-04 Version 1.0
     Space-delimited, word-based, 'AND' filtering through an input box
     Arrow keys to select a high-level account
