@@ -4,7 +4,7 @@ let GLOBALS = { nextEnterKeyUpDisabled: false }; // Prevent accidental log ins, 
 
 const LOCAL_STORAGE_KEY = "ff-aps-tags";
 createTagsContainers();
-createAddTagButton();
+createTagButtons();
 resetTagsFromMemory();
 
 
@@ -223,6 +223,8 @@ function isScrolledIntoView(el) {
 function createTagsContainers() {
     [...document.getElementsByClassName("custom-tags")].forEach(ele => ele.remove()); // Remove any old tags div containers
     
+    [...document.getElementsByClassName("saml-role")].forEach(ele => ele.style.marginBottom = "10px"); // Styling tweak to fit tags closer to roles
+
     const lastElementsInEachAccount = [...document.getElementsByClassName("saml-account")].filter(ele => ele.parentNode.tagName == 'DIV');
     lastElementsInEachAccount.forEach(ele => createTagsContainer(ele));
 }
@@ -234,17 +236,28 @@ function createTagsContainer(ele) {
     ele.append(tagsLabel);
 }
 
-function createAddTagButton() {
-    const button = document.createElement("button");
-    button.innerText = "Add Tag";
-    button.style.margin = "0 0 0 .75em";
-    button.style.padding = ".5em 1em";
-    button.setAttribute("class", "add-tag-button");
-    
-    const filterInput = document.getElementsByClassName("custom-filter")[0];
-    filterInput.after(button);
+function createTagButtons() {
+    createTagButtonElement("Tag", addTagToVisibleAccounts, "Add tag to currently visible accounts");
+    let buttonE = createTagButtonElement("E", exportTags, "Export tags; display importable string that you can share");
+    let buttonI = createTagButtonElement("I", importTags, "Import tags; replace your current tags with values from json string");
 
-    button.onclick = addTagToVisibleAccounts;
+    buttonE.style.padding = ".5em .5em";
+    buttonI.style.padding = ".5em .5em";
+}
+
+function createTagButtonElement(text, func, title) {
+    const button = document.createElement("button");
+    button.innerText = text;
+    button.style.margin = "0 0 0 .5em";
+    button.style.padding = ".5em 1em";
+    button.setAttribute("title", title);
+    button.setAttribute("class", "add-tag-button");
+    button.onclick = func;
+
+    const filterContainer = document.getElementsByClassName("custom-filter-container")[0];
+    filterContainer.appendChild(button);
+
+    return button;
 }
 
 function addTagToVisibleAccounts() {
@@ -257,6 +270,8 @@ function addTagToVisibleAccounts() {
     if (!isValidTagName(tag)) { alert("Invalid tag name, must adhere to (a-z 0-9 - . ! no spaces, >=2)"); return false; }
     
     let visibleAccounts = getAllVisibleOptionsParents();
+    if (visibleAccounts.length > 4
+        && !confirm(`Are you sure you want to tag all ${visibleAccounts.length} accounts with '${tag}'?`)) { return false; }
     visibleAccounts.forEach(account => addTagToAccount(account, tag));
 
     resetTagsFromMemory();
@@ -305,12 +320,12 @@ function loadAccountTags(accountNumber) {
 function loadAllTags() {
     try {
         let tags = window.localStorage.getItem(LOCAL_STORAGE_KEY); // https://www.lastweekinaws.com/blog/are-aws-account-ids-sensitive-information/
-        return JSON.parse(tags);
+        return tags == null ? {} : JSON.parse(tags);
     } catch (err) {
         console.error(`Error while attempting to load tags: ${err}`);
     }
 
-    return  {};
+    return {};
 }
 
 function addTagElement(customTag, accountNumber, tag) {
@@ -376,4 +391,62 @@ function refreshFilterView() {
     const filter = document.getElementsByClassName("custom-filter")[0];
     filterOptionsByValue(filter.value);
     filter.focus();
+}
+
+function exportTags() {
+    document.getElementsByClassName("custom-filter")[0].focus();
+    const tags = loadAllTags();
+
+    const noEmptyTags = Object.getOwnPropertyNames(tags).reduce((prev, curr) => {
+                if (tags[curr].length > 0) { prev[curr] = tags[curr]; }
+                return prev;
+            }
+            , {}
+        );
+
+    document.getElementsByClassName("custom-filter")[0].value = JSON.stringify(noEmptyTags);
+    return false;
+}
+
+function importTags() {
+    document.getElementsByClassName("custom-filter")[0].focus();
+    
+    const importableJson = prompt("WARNING: This replaces ALL tags on specified accounts, and leaves tags on unspecified ones! We recommend exporting a backup.\n\nPlease paste the importable json string here:");
+    if (importableJson == null) { return false; }
+
+    try {
+        const obj = JSON.parse(importableJson);
+        const accounts = Object.getOwnPropertyNames(obj);
+        const accountsOnPage = getAllOptions().map(ele => ele.innerText).map(accountNameText => accountNameText.slice(accountNameText.indexOf("(") + 1, -1).trim());
+        
+        const validAccounts = accounts.filter(account => accountsOnPage.indexOf(account) >= 0);
+        const invalidAccounts = accounts.filter(account => accountsOnPage.indexOf(account) == -1);
+        const totalTagsFound = accounts.reduce((prev, curr) => prev + obj[curr].length, 0);
+
+        const validAccountsAndTags = validAccounts.reduce((prev, curr) => { prev[curr] = obj[curr].filter(isValidTagName); return prev; }, {}); // Filter invalid tags
+
+         // Merge-replace accounts+tags map into current accounts+tags map
+        let currentTags = loadAllTags();
+        const tagsToSave = validAccounts.reduce((prev, curr) => { prev[curr] = validAccountsAndTags[curr]; return prev; }, currentTags);
+        saveAndReplaceAllTags(tagsToSave);
+
+        const totalTagsImported = validAccounts.reduce((prev, curr) => prev + validAccountsAndTags[curr].length, 0);
+        const totalTagsSaved = Object.getOwnPropertyNames(tagsToSave).reduce((prev, curr) => prev + tagsToSave[curr].length, 0);
+
+        alert(`${validAccounts.length} valid accounts found:\n`
+            + `${validAccounts}\n\n`
+            + `${invalidAccounts.length} invalid accounts found:\n`
+            + `${invalidAccounts}\n\n`
+            + `${totalTagsImported} / ${totalTagsFound} total tags imported, total tags saved ${totalTagsSaved}`);
+    } catch(err) {
+        alert(err);
+    }
+
+    resetTagsFromMemory();
+    
+    return false;
+}
+
+function saveAndReplaceAllTags(tags) {
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tags));
 }
