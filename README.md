@@ -88,3 +88,15 @@ Filtered accounts, selected using arrow keys. You can hit enter to log in
   1. Click "Load unpacked" and add this entire folder
 
   1. Enjoy your Chrome version of ff-aps, aka chr-aps! :)
+
+## Brave Support
+
+  1. Go to hamburger (3 lines) button at the top right
+
+  1. Select "Extensions"
+
+  1. Click "Developer Mode" at the top right to turn it on
+
+  1. Click "Load unpacked" and add this entire folder
+
+  1. Enjoy your Brave version of ff-aps, aka chr-aps! :)
