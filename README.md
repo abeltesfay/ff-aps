@@ -99,4 +99,4 @@ Filtered accounts, selected using arrow keys. You can hit enter to log in
 
   1. Click "Load unpacked" and add this entire folder
 
-  1. Enjoy your Brave version of ff-aps, aka chr-aps! :)
+  1. Enjoy your Brave version of ff-aps, aka br-aps! :)
