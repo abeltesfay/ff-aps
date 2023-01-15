@@ -76,7 +76,7 @@ function getAllOptionRadios() {
 }
 
 function getAccountNameFromRadio(radio) {
-    return radio.parentNode.parentNode.parentNode.getElementsByTagName("saml-account-name")[0].innerText;
+    return radio.parentNode.parentNode.parentNode.getElementsByClassName("saml-account-name")[0].innerText;
 }
 
 function detectChanges(event) {
