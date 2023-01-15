@@ -18,6 +18,9 @@ README.md               You are here
 
 ## Latest changes
 ```
+2023-01-14 Version 1.2
+    Add single-click login functionality
+
 2022-03-07 Version 1.1
     Add tags to accounts for filtering and grouping
     Add export and import functionality

@@ -1,5 +1,6 @@
 removeCustomFilterInputIfExists();
 setUpCustomFilterInput();
+setUpSingleClickLogin();
 let GLOBALS = { nextEnterKeyUpDisabled: false }; // Prevent accidental log ins, see addTagToVisibleAccounts()
 
 const LOCAL_STORAGE_KEY = "ff-aps-tags";
@@ -56,6 +57,16 @@ function setUpCustomFilterInput() {
     
     input.focus();
     return input;
+}
+
+function setUpSingleClickLogin() {
+    getAllOptions().forEach(option => {
+        parent(option).onclick = () => {
+            if (!doubleConfirmationIfProd(this.innerText)) { return; }
+            this.getElementsByClassName('saml-role-description')[0].click();
+            clickLoginButton();
+        };
+    });
 }
 
 function detectChanges(event) {
