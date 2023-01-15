@@ -53,20 +53,30 @@ function setUpCustomFilterInput() {
     inputContainer.appendChild(input);
     
     // Append search box to form
-    document.getElementById("saml_form").getElementsByTagName("p")[0].after(inputContainer);
+    document.getElementById("saml_form")?.getElementsByTagName("p")[0].after(inputContainer);
     
     input.focus();
     return input;
 }
 
 function setUpSingleClickLogin() {
-    getAllOptions().forEach(option => {
-        parent(option).onclick = () => {
-            if (!doubleConfirmationIfProd(this.innerText)) { return; }
-            this.getElementsByClassName('saml-role-description')[0].click();
-            clickLoginButton();
-        };
+    getAllOptionRadios().forEach(option => {
+        option.parentNode.addEventListener("click", logInSingleClick.bind(option));
     });
+}
+
+function logInSingleClick() {
+    if (!doubleConfirmationIfProd(getAccountNameFromRadio(this))) { return; }
+    this.parentNode.getElementsByTagName("input")[0].click();
+    clickLoginButton();
+}
+
+function getAllOptionRadios() {
+    return [...document.getElementsByClassName("saml-role-description")];
+}
+
+function getAccountNameFromRadio(radio) {
+    return radio.parentNode.parentNode.parentNode.getElementsByTagName("saml-account-name")[0].innerText;
 }
 
 function detectChanges(event) {
@@ -266,7 +276,7 @@ function createTagButtonElement(text, func, title) {
     button.onclick = func;
 
     const filterContainer = document.getElementsByClassName("custom-filter-container")[0];
-    filterContainer.appendChild(button);
+    filterContainer?.appendChild(button);
 
     return button;
 }
