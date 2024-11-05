@@ -18,6 +18,9 @@ README.md               You are here
 
 ## Latest changes
 ```
+2024-11-05 Version 1.3
+    Add support for accounts with multiple roles
+    
 2024-02-26 Version 1.2.1
     Fix bug where single click has double prompt
     

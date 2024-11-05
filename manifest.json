@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Firefox AWS Plugin Searchbox",
-    "version": "1.2.1",
+    "version": "1.3",
     "description": "Adds a neat filtering ability to the AWS login page. Well, I think it's neat anyway.",
     "icons": {
         "48": "icons/border-48.png"

@@ -31,7 +31,7 @@ function removeCustomFilterInputIfExists() {
 }
 
 function setUpCustomFilterInput() {
-    getAllOptions().forEach(show); // Reset
+    getAllOptions().forEach(showRole); // Reset
     resetHighlighted();
 
     // Create custom filter
@@ -89,27 +89,45 @@ function detectChanges(event) {
     }
 
     // Only register arrow keys on keydown for repeats; this handles highlighting
-    if (this == 'down' && detectArrows(event)) { return; }
+    if (this == 'down' && detectArrows(event)) { event.preventDefault(); return; }
     if (this == 'up' && (event.which == 38 || event.which == 40)) { return; } // Ignore key up arrows
 
     // Handle filtering on every other key press
     const filterValue = event.target.value;
-    if (filterValue.length == 0) { getAllOptions().forEach(show); resetHighlighted(); return; }
+    if (filterValue.length == 0) { getAllOptions().forEach(showRole); resetHighlighted(); return; }
 
     filterOptionsByValue(filterValue);
 }
 
-function hide(o) { parent(o).style.display = 'none'; }
-function show(o) { parent(o).style.display = 'block'; }
+function hideRole(o) { o.ele.style.display = "none"; hideOrShowAccountsIfNoRolesVisible(); }
+function showRole(o) { o.ele.style.display = "block"; hideOrShowAccountsIfNoRolesVisible(); }
+
+function hideOrShowAccountsIfNoRolesVisible() {
+    const options = getAllOptions();
+    options.forEach(option => {
+        const currentAccountEle = option.accountLabelEle;
+        const selectableRoles = options.filter(o => o.accountLabelEle == currentAccountEle);
+        const hasVisibleRoles = selectableRoles.some(selectableRole => selectableRole.ele.style.display === "block");
+           
+        parent(currentAccountEle).style.display = hasVisibleRoles ? "block" : "none";
+    })
+};
+
 function parent(o) { return o.parentNode.parentNode; }
+function parentWrap(option) { return option.accountLabelEle.parentNode.parentNode; }
 
 function getAllOptions() {
-    return [...document.getElementsByClassName("saml-account-name")];
+    const roleEles = [...document.getElementsByClassName("saml-role")];
+    return roleEles.map(ele => ({
+        accountLabelEle: ele.parentElement.parentElement.getElementsByClassName("saml-account-name")[0],
+        ele,
+    }));
 }
 
 function filterOptionsByValue(value) {
-    getAllOptions().filter(o => !matchesAllWords(o, value)).forEach(hide);
-    getAllOptions().filter(o => matchesAllWords(o, value)).forEach(show);
+    getAllOptions().filter(o => !matchesAllWords(o, value)).forEach(hideRole);
+    getAllOptions().filter(o => matchesAllWords(o, value)).forEach(showRole);
+    hideOrShowAccountsIfNoRolesVisible(getAllOptions());
 
     resetHighlighted();
 
@@ -121,9 +139,9 @@ function filterOptionsByValue(value) {
 
 function matchesAllWords(accountName, filterValuesSeparatedBySpaces) {
     const vals = filterValuesSeparatedBySpaces.split(' ').filter(val => val.slice(0, 1) != "."); // Ignore any tag-specific filters
-    const accountTextAndTags = accountName.innerText + " " + accountName.dataset.tags;
-    const allValuesFoundInAccountTextOrTags = vals.every(o => accountTextAndTags.indexOf(o) != -1);
-    return allValuesFoundInAccountTextOrTags;
+    const accountTextAndRoleAndTags = accountName.accountLabelEle.innerText + " " + accountName.ele.innerText + " " + accountName.accountLabelEle.dataset.tags;
+    const allValuesFoundInAccountTextOrRoleOrTags = vals.every(o => accountTextAndRoleAndTags.indexOf(o) != -1);
+    return allValuesFoundInAccountTextOrRoleOrTags;
 }
 
 function attemptLogin() {
@@ -150,7 +168,10 @@ function attemptLogin() {
 }
 
 function getAllVisibleOptionsParents() {
-    return getAllOptions().map(parent).filter(o => o.style.display != 'none');
+    return getAllOptions().filter(option => {
+        const container = parent(option.accountLabelEle);
+        return container.style.display != 'none';
+    });
 }
 
 function doubleConfirmationIfProd(ele) {
@@ -179,7 +200,10 @@ function clickLoginButton() { document.getElementById("signin_button").click(); 
 //
 function resetHighlighted() {
     window.scrollTo(0, 0);
-    getAllVisibleOptionsParents().forEach(o => o.style.borderLeft = "none");
+    getAllVisibleOptionsParents().forEach(o => {
+        o.ele.style.borderLeft = "none";
+        parentWrap(o).style.borderLeft = "none";
+    });
 }
 
 function detectArrows(event) {
@@ -209,13 +233,14 @@ function selectNextVisibleOne(direction) {
 
     resetHighlighted();
 
-    options[selected].style.borderLeft = HIGHLIGHT_COLOR;
-    scrollToMakeItVisible(options[selected]);
+    parentWrap(options[selected]).style.borderLeft = HIGHLIGHT_COLOR;
+    options[selected].ele.style.borderLeft = HIGHLIGHT_COLOR;
+    scrollToMakeItVisible(parentWrap(options[selected]));
 }
 
 function getHighlightedIndex(options) {   
     for (let i = 0; i < options.length; i++) {
-        if (options[i].style.borderLeft == HIGHLIGHT_COLOR) { return i; }
+        if (options[i].ele.style.borderLeft == HIGHLIGHT_COLOR) { return i; }
     }
 
     return -1;
@@ -299,6 +324,7 @@ function addTagToVisibleAccounts() {
     if (!isValidTagName(tag)) { alert("Invalid tag name, must adhere to (a-z 0-9 - . ! no spaces, >=2)"); return false; }
     
     let visibleAccounts = getAllVisibleOptionsParents();
+    visibleAccounts = Array.from(new Set(visibleAccounts.map(account => account.accountLabelEle)));
     if (visibleAccounts.length > 4
         && !confirm(`Are you sure you want to tag all ${visibleAccounts.length} accounts with '${tag}'?`)) { return false; }
     visibleAccounts.forEach(account => addTagToAccount(account, tag));
