@@ -4,6 +4,7 @@ setUpSingleClickLogin();
 let GLOBALS = { nextEnterKeyUpDisabled: false }; // Prevent accidental log ins, see addTagToVisibleAccounts()
 
 const LOCAL_STORAGE_KEY = "ff-aps-tags";
+let prodConfirmationTempStorage = undefined;
 createTagsContainers();
 createTagButtons();
 resetTagsFromMemory();
@@ -65,7 +66,8 @@ function setUpSingleClickLogin() {
     });
 }
 
-function logInSingleClick() {
+function logInSingleClick(event) {
+    if (!event.isTrusted) { return; } // Prevent duplicate confirmation on single clicks
     if (!doubleConfirmationIfProd(getAccountNameFromRadio(this))) { return; }
     this.parentNode.getElementsByTagName("input")[0].click();
     clickLoginButton();
@@ -158,9 +160,10 @@ function doubleConfirmationIfProd(ele) {
     console.log(ele.toLowerCase());
     if (!prodValues.some(prodVal => text.toLowerCase().indexOf(prodVal) != -1)) { return true; }
 
-    let confirmation = confirm("WARNING: THIS MAY BE A PRODUCTION ENVIRONMENT!\n\nAre you sure you want to continue?");
+    prodConfirmationTempStorage = prodConfirmationTempStorage || typeof prodConfirmationTempStorage === "undefined" && confirm("WARNING: THIS MAY BE A PRODUCTION ENVIRONMENT!\n\nAre you sure you want to continue?");
     // confirmation = confirmation ? confirm("Are you really, REALLY sure though?") : confirmation;
-    return confirmation;
+    setTimeout(() => prodConfirmationTempStorage = undefined, 150);
+    return prodConfirmationTempStorage;
 }
 
 function clickLoginButton() { document.getElementById("signin_button").click(); }
