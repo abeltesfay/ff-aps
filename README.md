@@ -18,6 +18,9 @@ README.md               You are here
 
 ## Latest changes
 ```
+2024-02-26 Version 1.2.1
+    Fix bug where single click has double prompt
+    
 2023-01-14 Version 1.2
     Add single-click login functionality
 
