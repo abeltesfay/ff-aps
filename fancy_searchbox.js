@@ -152,15 +152,15 @@ function attemptLogin() {
     let selected = getHighlightedIndex(options);
 
     if (selected !== -1) {
-        if (!doubleConfirmationIfProd(options[selected].innerText)) { return; }
-        options[selected].getElementsByClassName('saml-role-description')[0].click();
+        if (!doubleConfirmationIfProd(parentWrap(options[selected]).innerText)) { return; }
+        options[selected].ele.click();
         clickLoginButton();
     } else
     
     // None highlighted? If there is only 1, select that one
     if (visibleOptions.length == 1) {
-        if (!doubleConfirmationIfProd(visibleOptions[0].innerText)) { return; }
-        visibleOptions[0].getElementsByClassName('saml-role-description')[0].click();
+        if (!doubleConfirmationIfProd(parentWrap(visibleOptions[0]).innerText)) { return; }
+        visibleOptions[0].ele.click();
         clickLoginButton();
     }
 
