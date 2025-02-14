@@ -87,6 +87,8 @@ function detectChanges(event) {
         try { attemptLogin(); } catch(err) { console.error(err); };
         return false;
     }
+    
+    if (event.which == 17) { event.preventDefault(); return; } // Ignore control key so that it doesn't reset highlighting
 
     // Only register arrow keys on keydown for repeats; this handles highlighting
     if (this == 'down' && detectArrows(event)) { event.preventDefault(); return; }
@@ -210,24 +212,25 @@ function detectArrows(event) {
     if (event.which == 27) { resetHighlighted(); return true; } // Escape key
 
     if (event.which == 38 || event.which == 40) { // Handle up (38) or down (40) keys for easy selection
-        handleArrow(event.which);
+        handleArrow(event.which, event.getModifierState("Control"));
         return true;
     }
 
     resetHighlighted();
 }
 
-function handleArrow(arrkey) {
+function handleArrow(arrkey, isControlActive) {
     const direction = arrkey == 38 ? -1 : 1;
-    selectNextVisibleOne(direction);
+    selectNextVisibleOne(direction, isControlActive);
 }
 
 const HIGHLIGHT_COLOR = "3px solid rgb(255, 153, 0)";
 
-function selectNextVisibleOne(direction) {
+function selectNextVisibleOne(direction, gotoNextAccount) {
     let options = getAllVisibleOptionsParents();
     let selected = getHighlightedIndex(options);
-    selected += direction;
+
+    selected += getBigJumpOffset(gotoNextAccount, options, selected, direction);
     selected = Math.min(selected, options.length - 1); // Make sure it's at least the first one
     selected = Math.max(selected, 0);                  // Make sure it's at most the last one
 
@@ -236,6 +239,21 @@ function selectNextVisibleOne(direction) {
     parentWrap(options[selected]).style.borderLeft = HIGHLIGHT_COLOR;
     options[selected].ele.style.borderLeft = HIGHLIGHT_COLOR;
     scrollToMakeItVisible(parentWrap(options[selected]));
+}
+
+function getBigJumpOffset(gotoNextAccount, options, selectedIndex = 0, direction) {
+    if (!gotoNextAccount) { return direction; } // No big jump, just single role jump
+    
+    const selectedAccount = options[selectedIndex]?.accountLabelEle?.innerText;
+    let multiplier = 0, nextIndex, nextAccount = selectedAccount;
+    
+    do {
+        multiplier++;
+        nextIndex = selectedIndex + (direction * multiplier);
+        nextAccount = options[nextIndex]?.accountLabelEle?.innerText
+    } while (nextAccount?.length > 0 && nextIndex > 0 && nextIndex < options.length && nextAccount == selectedAccount);
+    
+    return multiplier * direction;
 }
 
 function getHighlightedIndex(options) {   

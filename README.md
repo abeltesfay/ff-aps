@@ -18,6 +18,9 @@ README.md               You are here
 
 ## Latest changes
 ```
+2025-02-14 Version 1.4
+    Add support for jumping between accounts instead of roles by holding down control key when using arrows
+    
 2024-11-05 Version 1.3
     Add support for accounts with multiple roles
     

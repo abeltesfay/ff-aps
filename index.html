@@ -1,0 +1,18 @@
+<html>
+    <head>
+        <script type="text/javascript">
+            function setupStuff() {
+                window.onkeydown = detectKeys;
+            }
+            
+            function detectKeys(event) {
+                // console.info(event, event.getModifierState("Control"));
+                console.info("Control:", event.getModifierState("Control"));
+                console.info(event.which)
+            }
+        </script>
+    </head>
+    <body onload="setupStuff();">
+        
+    </body>
+</html>
